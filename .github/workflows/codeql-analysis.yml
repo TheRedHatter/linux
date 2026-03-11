@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "master", "main" ]
   schedule:
-    - cron: '0 3 * * 1'   # weekly deep scan
+    - cron: '0 3 * * 1'
 
 permissions:
   actions: read
@@ -32,47 +32,43 @@ jobs:
 
     steps:
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: ${{ matrix.language }}
-        build-mode: ${{ matrix.build-mode }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
-        # High finding configuration
-        queries:
-          - security-extended
-          - security-and-quality
+          # Correct syntax
+          queries: security-extended,security-and-quality
 
-        # Optional config file for deeper scans
-        config-file: ./.github/codeql/codeql-config.yml
+          config-file: ./.github/codeql/codeql-config.yml
 
-    - name: Install Kernel Build Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          bc \
-          flex \
-          bison \
-          libssl-dev \
-          libelf-dev
+      - name: Install Kernel Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            bc \
+            flex \
+            bison \
+            libssl-dev \
+            libelf-dev
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v4
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
 
-    # Manual fallback build for Linux kernel
-    - name: Manual Build (Fallback)
-      run: |
-        make defconfig
-        make -j$(nproc)
-      continue-on-error: true
+      - name: Manual Build (Fallback)
+        run: |
+          make defconfig
+          make -j$(nproc)
+        continue-on-error: true
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v4
-      with:
-        category: "/language:${{ matrix.language }}"
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
